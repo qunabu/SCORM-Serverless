@@ -1,8 +1,8 @@
 # SCORM-Serverless Proof Of Concept
 
-Here is a Proof Of Concept that SCORM packages can be rendered without the need for a Monolith serverside rendering SCORM LMS.
+Proof Of Concept proves SCORM packages can be rendered without the need for a monolith server side rendering LMS.
 
-What is does
+## What is does
 
 1. Registers simple Service Worker
 2. This app send to Service Worker ZIP url to download
@@ -18,3 +18,14 @@ self.addEventListener("fetch", async (e) => {
 
 6. The app creates a `iframe` with prefix from Service Worker
 7. All SCORM package files are served from ZIP with Service Worker
+
+```mermaid
+flowchart TD
+    App[Web Appliction] -->|Registers| SW[Service Worker]
+    App -->|Submit ZIP URL| SW
+    SW -->|Downloads & uncompress| ZIP
+    SW -->|Returns SCORM data| App
+    App -->|Creates| Iframe
+    SW -->|Registers| FetchListener[Fetch Listener]
+    Iframe -->|Get files from| ZIP --> |Though| FetchListener
+```
