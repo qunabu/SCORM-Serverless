@@ -1,6 +1,7 @@
 # SCORM-Serverless Proof Of Concept
 
 Proof Of Concept proves SCORM packages can be rendered without the need for a monolith server side rendering LMS.
+Everything in only Client Side in the browser.
 
 ## What is does
 
