@@ -1,3 +1,15 @@
+const examples = [
+  "https://scorm.com/wp-content/assets/golf_examples/PIFS/SequencingRandomTest_SCORM20043rdEdition.zip",
+  "https://scorm.com/wp-content/assets/golf_examples/PIFS/SequencingPreOrPostTestRollup_SCORM20043rdEdition.zip",
+  "https://scorm.com/wp-content/assets/golf_examples/PIFS/SequencingPostTestRollup4thEd_SCORM20044thEdition.zip",
+  "https://scorm.com/wp-content/assets/golf_examples/PIFS/SequencingPostTestRollup_SCORM20043rdEdition.zip",
+  "https://scorm.com/wp-content/assets/golf_examples/PIFS/SequencingForcedSequential_SCORM20043rdEdition.zip",
+  "https://scorm.com/wp-content/assets/golf_examples/PIFS/RunTimeAdvancedCalls_SCORM20043rdEdition.zip",
+  "https://scorm.com/wp-content/assets/golf_examples/PIFS/RuntimeBasicCalls_SCORM20043rdEdition.zip",
+  "https://scorm.com/wp-content/assets/golf_examples/PIFS/RuntimeBasicCalls_SCORM12.zip",
+  "https://scorm.com/wp-content/assets/golf_examples/PIFS/RuntimeMinimumCalls_SCORM20043rdEdition.zip",
+  "https://scorm.com/wp-content/assets/golf_examples/PIFS/RuntimeMinimumCalls_SCORM12.zip",
+];
 function scorm12(settings) {
   window.API = new Scorm12API(settings);
   //window.API.loadFromJSON(cmi);
@@ -78,36 +90,119 @@ function get(key) {
   });
 }
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("serviceworker.js");
+function loading(isLoading = true) {
+  document.getElementById("loading").style.display = isLoading
+    ? "flex"
+    : "none";
+}
 
-  navigator.serviceWorker.ready.then((registration) => {
-    document.getElementById("open-scorm").addEventListener("click", () => {
-      registration.active.postMessage(
-        document.getElementById("scorm-url").value
-      );
-      document.getElementById("loading").style.display = "flex";
-      document.getElementById("entry").style.display = "none";
+navigator.serviceWorker.addEventListener("message", (event) => {
+  const scormObj = event.data.scormObj;
+  // Those Settings should be fetched from the backend
+  const settings = {};
+
+  if (scormObj.version === "2004") {
+    scorm2004(settings);
+  } else if (scormObj.version === "AICC") {
+    aicc(settings);
+  } else {
+    scorm12(settings);
+  }
+
+  const scoEl = document.getElementById("scos");
+  const iframeEl = document.getElementById("iframe_el");
+
+  scoEl.innerHTML == "";
+
+  loading(false);
+
+  scormObj.resources
+    .filter((resource) => {
+      if (resource._attributes["adlcp:scormType"]) {
+        return resource._attributes["adlcp:scormType"] === "sco";
+      }
+      return true;
+    })
+    .forEach((resource) => {
+      const button = document.createElement("button");
+      button.innerText = resource._attributes.identifier;
+      scoEl.appendChild(button);
+      button.addEventListener("click", () => {
+        const iframe = document.createElement("iframe");
+        iframe.src = `${scormObj.PREFIX}/${resource._attributes.href}`;
+        iframeEl.innerHTML = "";
+        iframeEl.appendChild(iframe);
+        loading(false);
+        document.getElementById("entry").style.display = "none";
+        document.getElementById("scos").style.display = "none";
+      });
+    });
+
+  console.log(scormObj.resources);
+});
+
+function register(url = "serviceworker.js") {
+  return new Promise((resolve, reject) => {
+    navigator.serviceWorker.register(url).then((reg) => {
+      if (!reg.active) {
+        (reg.installing || reg.waiting).addEventListener("statechange", () => {
+          resolve(reg.active);
+        });
+      } else {
+        requestAnimationFrame(() => resolve(reg.active));
+      }
     });
   });
 
-  navigator.serviceWorker.addEventListener("message", (event) => {
-    const scormObj = event.data.scormObj;
-    // Those Settings should be fetched from the backend
-    const settings = {};
+  /*
+  return new Promise((resolve, reject) => {
 
-    if (scormObj.version === "2004") {
-      scorm2004(settings);
-    } else if (scormObj.version === "AICC") {
-      aicc(settings);
-    } else {
-      scorm12(settings);
-    }
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("serviceworker.js");
 
-    const iframe = document.createElement("iframe");
-    iframe.src = scormObj.entrypoint;
-    document.body.appendChild(iframe);
+    navigator.serviceWorker.ready.then((registration) => {
+      
+    });
 
-    document.getElementById("loading").style.display = "none";
-  });
+
+  } else {
+    reject();
+  })
+  */
 }
+
+function init() {
+  loading();
+
+  register().then((reg) => {
+    navigator.serviceWorker.ready.then((registration) => {
+      //console.log("ready", registration);
+      loading(false);
+    });
+    //console.log("Service Worker registered", reg);
+  });
+  document.getElementById("open-scorm").addEventListener("click", () => {
+    navigator.serviceWorker.ready.then((registration) => {
+      registration.active.postMessage(
+        document.getElementById("scorm-url").value
+      );
+      loading(true);
+    });
+  });
+
+  document
+    .getElementById("scorm-select")
+    .addEventListener("change", (event) => {
+      document.getElementById("scorm-url").value = event.target.value;
+    });
+
+  examples.forEach((url) => {
+    document.getElementById(
+      "scorm-select"
+    ).innerHTML += `<option>${url}</option>`;
+  });
+
+  document.getElementById("scorm-url").value = examples[0];
+}
+
+init();

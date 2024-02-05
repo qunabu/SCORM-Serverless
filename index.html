@@ -10,6 +10,7 @@
     />
     <title></title>
     <style>
+      #iframe_el,
       iframe,
       body,
       html {
@@ -19,9 +20,11 @@
         padding: 0;
         margin: 0;
       }
+      #scos,
       #loading,
       #entry {
-        height: 100%;
+        padding-top: 1em;
+        padding-bottom: 1em;
         width: 100%;
         display: flex;
         flex-direction: row;
@@ -51,16 +54,19 @@
     <div id="entry">
       <label>
         <span>SCORM URL:</span>
+        <select id="scorm-select"></select>
         <input
           type="text"
           id="scorm-url"
           placeholder="Put here SCORM URL"
-          value="https://scorm.com/wp-content/assets/golf_examples/PIFS/RuntimeBasicCalls_SCORM20043rdEdition.zip"
+          value=""
         />
         <button id="open-scorm">
           Open SCORM without Server Side Rendering
         </button>
       </label>
     </div>
+    <div id="scos"></div>
+    <div id="iframe_el"></div>
   </body>
 </html>
